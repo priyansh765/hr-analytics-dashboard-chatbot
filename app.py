@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import joblib
 
 st.set_page_config(page_title="HR Analytics Dashboard", layout="wide")
 
@@ -8,6 +9,10 @@ st.title("HR Analytics Dashboard")
 
 # Load data
 df = pd.read_csv('data/processed/hr_cleaned.csv')
+# Load trained model
+model = joblib.load('src/models/attrition_model.pkl')
+label_encoders = joblib.load('src/models/label_encoders.pkl')
+feature_columns = joblib.load('src/models/feature_columns.pkl')
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Filters")
@@ -103,7 +108,60 @@ elif page == "Department Insights":
 
 elif page == "Prediction":
     st.header("Attrition Prediction")
-    st.write("Coming soon...")
+    st.write("Enter employee details to predict attrition risk")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        age = st.slider("Age", 18, 60, 30)
+        monthly_income = st.number_input("Monthly Income", 1000, 20000, 5000)
+        overtime = st.selectbox("OverTime", ["Yes", "No"])
+        job_satisfaction = st.slider("Job Satisfaction (1-4)", 1, 4, 3)
+
+    with col2:
+        department = st.selectbox("Department", df['Department'].unique())
+        job_role = st.selectbox("Job Role", df['JobRole'].unique())
+        years_at_company = st.slider("Years at Company", 0, 40, 5)
+        work_life_balance = st.slider("Work Life Balance (1-4)", 1, 4, 3)
+
+    with col3:
+        distance_from_home = st.slider("Distance From Home", 1, 30, 5)
+        total_working_years = st.slider("Total Working Years", 0, 40, 8)
+        gender = st.selectbox("Gender", df['Gender'].unique())
+        marital_status = st.selectbox("Marital Status", df['MaritalStatus'].unique())
+
+    if st.button("Predict Attrition Risk"):
+        # Build input row using dataset defaults, then override with user inputs
+        input_data = df.drop(columns=['Attrition', 'AttritionFlag', 'AgeGroup', 'SalaryBand', 'TenureGroup'], errors='ignore').iloc[0:1].copy()
+
+        input_data['Age'] = age
+        input_data['MonthlyIncome'] = monthly_income
+        input_data['OverTime'] = overtime
+        input_data['JobSatisfaction'] = job_satisfaction
+        input_data['Department'] = department
+        input_data['JobRole'] = job_role
+        input_data['YearsAtCompany'] = years_at_company
+        input_data['WorkLifeBalance'] = work_life_balance
+        input_data['DistanceFromHome'] = distance_from_home
+        input_data['TotalWorkingYears'] = total_working_years
+        input_data['Gender'] = gender
+        input_data['MaritalStatus'] = marital_status
+
+        # Encode categorical columns
+        for col, le in label_encoders.items():
+            if col in input_data.columns:
+                input_data[col] = le.transform(input_data[col].astype(str))
+
+        input_data = input_data[feature_columns]
+
+        prediction = model.predict(input_data)[0]
+        probability = model.predict_proba(input_data)[0][1]
+
+        st.markdown("---")
+        if prediction == 1:
+            st.error(f"⚠️ High Attrition Risk — Probability: {probability*100:.1f}%")
+        else:
+            st.success(f"✅ Low Attrition Risk — Probability: {probability*100:.1f}%")
 
 elif page == "Chatbot":
     st.header("HR Chatbot")
