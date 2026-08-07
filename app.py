@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import joblib
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from src.chatbot.rule_based_bot import HRChatbot
 
 st.set_page_config(page_title="HR Analytics Dashboard", layout="wide")
 
@@ -164,5 +169,50 @@ elif page == "Prediction":
             st.success(f"✅ Low Attrition Risk — Probability: {probability*100:.1f}%")
 
 elif page == "Chatbot":
-    st.header("HR Chatbot")
-    st.write("Coming soon...")
+    st.title("🤖 HR Analytics Chatbot")
+    st.write("Company ke HR data ke baare me kuch bhi poocho!")
+
+    # Chatbot instance ko session state me cache karo (baar baar reload na ho)
+    if "chatbot" not in st.session_state:
+        st.session_state.chatbot = HRChatbot()
+
+    # Chat history session state me store karo
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Sample questions dikhado help ke liye
+    with st.expander("💡 Example questions"):
+        st.markdown("""
+        - What is the attrition rate?
+        - Average salary in Sales department?
+        - How many employees in Research & Development?
+        - What is the average age?
+        - How much overtime is there?
+        """)
+
+    # Purani chat history dikhao
+    for role, message in st.session_state.chat_history:
+        with st.chat_message(role):
+            st.write(message)
+
+    # User input box (bottom me fixed rehta hai Streamlit me)
+    user_input = st.chat_input("Apna sawal yahan likho...")
+
+    if user_input:
+        # User ka message history me add karo aur dikhao
+        st.session_state.chat_history.append(("user", user_input))
+        with st.chat_message("user"):
+            st.write(user_input)
+
+        # Bot ka response nikalo
+        response = st.session_state.chatbot.get_response(user_input)
+
+        # Bot ka message history me add karo aur dikhao
+        st.session_state.chat_history.append(("assistant", response))
+        with st.chat_message("assistant"):
+            st.write(response)
+
+    # Clear chat button
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.chat_history = []
+        st.rerun()
