@@ -6,7 +6,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.chatbot.rule_based_bot import HRChatbot
+from src.chatbot.unified_bot import UnifiedHRChatbot
 
 st.set_page_config(page_title="HR Analytics Dashboard", layout="wide")
 
@@ -174,7 +174,8 @@ elif page == "Chatbot":
 
     # Chatbot instance ko session state me cache karo (baar baar reload na ho)
     if "chatbot" not in st.session_state:
-        st.session_state.chatbot = HRChatbot()
+        with st.spinner("Chatbot load ho raha hai (pehli baar thoda time lagega)..."):
+            st.session_state.chatbot = UnifiedHRChatbot()
 
     # Chat history session state me store karo
     if "chat_history" not in st.session_state:
