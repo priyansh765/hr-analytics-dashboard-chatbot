@@ -6,9 +6,59 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.chatbot.unified_bot import UnifiedHRChatbot
 
-st.set_page_config(page_title="HR Analytics Dashboard", layout="wide")
+st.set_page_config(
+    page_title="HR Analytics Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Custom CSS styling
+st.markdown("""
+<style>
+    /* KPI card jaisa metric box */
+    div[data-testid="stMetric"] {
+        background-color: #F8F9FB;
+        border: 1px solid #E6E6E6;
+        border-radius: 10px;
+        padding: 15px 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        font-weight: 600;
+        color: #555;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #6C63FF;
+    }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: #F0F2F6;
+    }
+
+    /* Page title spacing */
+    h1 {
+        padding-bottom: 10px;
+        border-bottom: 2px solid #6C63FF;
+    }
+
+    /* Buttons */
+    .stButton button {
+        border-radius: 8px;
+        font-weight: 500;
+    }
+
+    # Consistent color theme charts ke liye
+COLOR_PALETTE = ["#6C63FF", "#FF6584", "#43CBFF", "#9C88FF", "#00D9C0", "#FFA451"]
+</style>
+""", unsafe_allow_html=True)
+
+# Consistent color theme charts ke liye
+COLOR_PALETTE = ["#6C63FF", "#FF6584", "#43CBFF", "#9C88FF", "#00D9C0", "#FFA451"]
 
 st.title("HR Analytics Dashboard")
 
@@ -27,6 +77,8 @@ gender_filter = st.sidebar.multiselect("Gender", options=df['Gender'].unique(), 
 
 df = df[(df['Department'].isin(dept_filter)) & (df['Gender'].isin(gender_filter))]
 # Sidebar navigation
+st.sidebar.markdown("## 📊 HR Analytics")
+st.sidebar.markdown("---")
 page = st.sidebar.radio("Navigate", ["Overview", "Attrition Analysis", "Department Insights", "Prediction", "Chatbot"])
 
 if page == "Overview":
@@ -53,7 +105,7 @@ if page == "Overview":
 
     fig = px.pie(attrition_counts, names='Attrition', values='Count',
                  title='Attrition Distribution', hole=0.4)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 elif page == "Attrition Analysis":
     st.header("Attrition Analysis")
@@ -63,28 +115,28 @@ elif page == "Attrition Analysis":
     with col1:
         fig1 = px.histogram(df, x='Department', color='Attrition', barmode='group',
                              title='Attrition by Department')
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True, theme=None)
 
         fig3 = px.histogram(df, x='Gender', color='Attrition', barmode='group',
                              title='Attrition by Gender')
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, use_container_width=True, theme=None)
 
         fig5 = px.histogram(df, x='SalaryBand', color='Attrition', barmode='group',
                              title='Attrition by Salary Band')
-        st.plotly_chart(fig5, use_container_width=True)
+        st.plotly_chart(fig5, use_container_width=True, theme=None)
 
     with col2:
         fig2 = px.histogram(df, x='AgeGroup', color='Attrition', barmode='group',
                              title='Attrition by Age Group')
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, theme=None)
 
         fig4 = px.histogram(df, x='OverTime', color='Attrition', barmode='group',
                              title='Attrition by OverTime')
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig4, use_container_width=True, theme=None)
 
         fig6 = px.histogram(df, x='TenureGroup', color='Attrition', barmode='group',
                              title='Attrition by Tenure Group')
-        st.plotly_chart(fig6, use_container_width=True)
+        st.plotly_chart(fig6, use_container_width=True, theme=None)
 
 elif page == "Department Insights":
     st.header("Department Insights")
@@ -95,21 +147,21 @@ elif page == "Department Insights":
         dept_counts = df['Department'].value_counts().reset_index()
         dept_counts.columns = ['Department', 'Count']
         fig1 = px.bar(dept_counts, x='Department', y='Count', title='Headcount by Department')
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True, theme=None)
 
         fig3 = px.box(df, x='Department', y='JobSatisfaction', color='Department',
                        title='Job Satisfaction by Department')
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, use_container_width=True, theme=None)
 
     with col2:
         income_by_role = df.groupby('JobRole')['MonthlyIncome'].mean().reset_index().sort_values('MonthlyIncome')
         fig2 = px.bar(income_by_role, x='MonthlyIncome', y='JobRole', orientation='h',
                        title='Average Income by Job Role')
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, theme=None)
 
         fig4 = px.box(df, x='Department', y='WorkLifeBalance', color='Department',
                        title='Work Life Balance by Department')
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig4, use_container_width=True, theme=None)
 
 elif page == "Prediction":
     st.header("Attrition Prediction")
@@ -175,6 +227,7 @@ elif page == "Chatbot":
     # Chatbot instance ko session state me cache karo (baar baar reload na ho)
     if "chatbot" not in st.session_state:
         with st.spinner("Chatbot load ho raha hai (pehli baar thoda time lagega)..."):
+            from src.chatbot.unified_bot import UnifiedHRChatbot
             st.session_state.chatbot = UnifiedHRChatbot()
 
     # Chat history session state me store karo
