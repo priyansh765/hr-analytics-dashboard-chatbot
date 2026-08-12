@@ -65,9 +65,13 @@ st.title("HR Analytics Dashboard")
 # Load data
 df = pd.read_csv('data/processed/hr_cleaned.csv')
 # Load trained model
-model = joblib.load('src/models/attrition_model.pkl')
-label_encoders = joblib.load('src/models/label_encoders.pkl')
-feature_columns = joblib.load('src/models/feature_columns.pkl')
+try:
+    model = joblib.load('src/models/attrition_model.pkl')
+    label_encoders = joblib.load('src/models/label_encoders.pkl')
+    feature_columns = joblib.load('src/models/feature_columns.pkl')
+except FileNotFoundError:
+    st.error("⚠️ Model files nahi mile. Kripya pehle model training complete karein (notebook 03).")
+    st.stop()
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Filters")
@@ -76,6 +80,12 @@ dept_filter = st.sidebar.multiselect("Department", options=df['Department'].uniq
 gender_filter = st.sidebar.multiselect("Gender", options=df['Gender'].unique(), default=df['Gender'].unique())
 
 df = df[(df['Department'].isin(dept_filter)) & (df['Gender'].isin(gender_filter))]
+df = df[(df['Department'].isin(dept_filter)) & (df['Gender'].isin(gender_filter))]
+
+# Agar filter se saara data hat gaya, warning do
+if df.empty:
+    st.warning("⚠️ Koi data nahi mila in filters ke saath. Kripya filters adjust karein.")
+    st.stop()
 # Sidebar navigation
 st.sidebar.markdown("## 📊 HR Analytics")
 st.sidebar.markdown("---")
@@ -252,7 +262,7 @@ elif page == "Chatbot":
     # User input box (bottom me fixed rehta hai Streamlit me)
     user_input = st.chat_input("Apna sawal yahan likho...")
 
-    if user_input:
+    if user_input and user_input.strip():
         # User ka message history me add karo aur dikhao
         st.session_state.chat_history.append(("user", user_input))
         with st.chat_message("user"):
