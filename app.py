@@ -237,8 +237,17 @@ elif page == "Chatbot":
     # Chatbot instance ko session state me cache karo (baar baar reload na ho)
     if "chatbot" not in st.session_state:
         with st.spinner("Chatbot load ho raha hai (pehli baar thoda time lagega)..."):
-            from src.chatbot.unified_bot import UnifiedHRChatbot
-            st.session_state.chatbot = UnifiedHRChatbot()
+            try:
+                from src.chatbot.unified_bot import UnifiedHRChatbot
+                st.session_state.chatbot = UnifiedHRChatbot()
+                st.session_state.chatbot_mode = "full"
+            except Exception:
+                from src.chatbot.rule_based_bot import HRChatbot
+                st.session_state.chatbot = HRChatbot()
+                st.session_state.chatbot_mode = "data_only"
+
+    if st.session_state.get("chatbot_mode") == "data_only":
+        st.info("ℹ️ Currently running in **Data-Only mode** (policy Q&A requires local Ollama setup — see README for full setup).")
 
     # Chat history session state me store karo
     if "chat_history" not in st.session_state:
